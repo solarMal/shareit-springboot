@@ -64,4 +64,9 @@ public class UserRepositoryImpl implements UserRepository {
 
         log.info("пользователь с id={} удалён", id);
     }
+
+    @Override
+    public void someShit() {
+        System.out.println("someShiiit");
+    }
 }
