@@ -19,32 +19,19 @@ public class ItemServiceImpl implements ItemService {
 
     @Autowired
     public ItemServiceImpl(ItemRepository itemRepository,
-                           @Qualifier("userRepositoryImpl") UserRepository userRepository) {
+                           UserRepository userRepository) {
         this.itemRepository = itemRepository;
         this.userRepository = userRepository;
     }
 
     @Override
     public Item createItem(Long userId, Item item) {
-        validator(item);
-        User user = userRepository.getUserById(userId)
-                        .orElseThrow(() -> new UserNotFoundException("пользователь с id " + userId + " не найден"));
-
-        item.setOwnerId(user.getId());
-
-        itemRepository.createItem(item);
-        return item;
+        return new Item();
     }
 
     @Override
     public Item updateItem(Long itemId, Long userId, Item item) {
-       Item existingItem = getItemById(itemId);
-
-        if (!existingItem.getOwnerId().equals(userId)) {
-            throw new ItemNotFoundException("обновлять Item может только владелец");
-        }
-
-        return itemRepository.updateItem(itemId, item);
+       return new Item();
     }
 
     @Override
@@ -68,21 +55,4 @@ public class ItemServiceImpl implements ItemService {
         itemRepository.deleteByUserIdAndItemId(userId, itemId);
     }
 
-    private void validator(Item item) {
-        if (item == null) {
-            throw new ItemNotFoundException("Item не найден");
-        }
-
-        if (item.getName() == null || item.getName().isBlank()) {
-            throw new ValidateException("имя Item должно быть заполнено");
-        }
-
-        if (item.getAvailable() == null) {
-            throw new ValidateException("поле available должно быть заполнено");
-        }
-
-        if (item.getDescription() == null || item.getDescription().isBlank()) {
-            throw new ValidateException("поле description должно быть заполнено");
-        }
-    }
 }

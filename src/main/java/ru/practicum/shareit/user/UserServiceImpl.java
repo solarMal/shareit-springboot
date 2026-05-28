@@ -2,15 +2,11 @@ package ru.practicum.shareit.user;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import ru.practicum.shareit.errorhandler.exception.CriticalException;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.errorhandler.exception.UserNotFoundException;
-import ru.practicum.shareit.errorhandler.exception.ValidateException;
-
 
 import java.util.List;
-import java.util.Objects;
 
 @Service
 @Slf4j
@@ -18,51 +14,60 @@ public class UserServiceImpl implements UserService {
     private final UserRepository repository;
 
     @Autowired
-    public UserServiceImpl(@Qualifier("userRepositoryImpl") UserRepository repository) {
+    public UserServiceImpl(UserRepository repository) {
         this.repository = repository;
     }
 
+    @Transactional
     @Override
-    public User createUser(User user) {
-        validation(user);
-        return repository.createUser(user);
+    public UserDto createUser(UserDto userDto) {
+        if (repository.existsByEmail(userDto.getEmail())) {
+            throw new RuntimeException("Email already exists");
+        }
+
+        return UserMapper.toUserDto(
+                repository.save(UserMapper.toUser(userDto))
+        );
     }
 
     @Override
-    public User getUserById(Long id) {
-        return repository.getUserById(id)
+    public UserDto getUserById(Long id) {
+         User user = repository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("пользователь с id" + id + " не найден"));
+         return UserMapper.toUserDto(user);
     }
 
     @Override
-    public List<User> getAllUsers() {
-        return repository.getAllUsers();
+    public List<UserDto> getAllUsers() {
+        return repository.findAll().stream()
+                .map(UserMapper::toUserDto)
+                .toList();
     }
 
     @Override
-    public User updateUser(Long id, User user) {
-        existingEmailValidator(user);
-        return repository.updateUser(id, user);
+    public UserDto updateUser(Long id, UserDto userDto) {
+        User current = repository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("пользователь с id" + id + " не найден"));
+
+        if (userDto.getName() != null) {
+            current.setName(userDto.getName());
+        }
+
+        if (current.getEmail() != null) {
+            current.setName(userDto.getEmail());
+        }
+
+        User savedUser = repository.save(current);
+
+        return UserMapper.toUserDto(savedUser);
     }
 
     @Override
     public void deleteUserById(Long id) {
-        repository.deleteUserById(id);
-    }
-
-
-    private void validation(User user) {
-        if (user.getEmail() == null || user.getEmail().isBlank() || !user.getEmail().contains("@")) {
-            throw new ValidateException("имейл не может быть пустым");
+        if (!repository.existsById(id)) {
+            throw new UserNotFoundException("Пользователь с id " + id + " не найден");
         }
-        existingEmailValidator(user);
-    }
 
-    private void existingEmailValidator(User user) {
-        for (User currentUser : repository.getAllUsers()) {
-            if (Objects.equals(currentUser.getEmail(), user.getEmail())) {
-                throw new CriticalException("имейл уже существует");
-            }
-        }
+        repository.deleteById(id);
     }
 }

@@ -5,10 +5,7 @@ import org.springframework.stereotype.Repository;
 import ru.practicum.shareit.errorhandler.exception.ItemNotFoundException;
 
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Repository
@@ -55,11 +52,7 @@ public class ItemRepositoryImpl implements ItemRepository {
 
     @Override
     public List<Item> getAllItemsByUserId(long userId) {
-        List<Item> result = items.values().stream()
-                .filter(item -> item.getOwnerId() == userId)
-                .collect(Collectors.toList());
-        log.info("пользователь с id={} сохранил {} ссылок", userId, result.size());
-        return result;
+        return Collections.emptyList();
     }
 
     @Override
@@ -84,11 +77,6 @@ public class ItemRepositoryImpl implements ItemRepository {
 
     @Override
     public void deleteByUserIdAndItemId(long userId, long itemId) {
-        Item item = items.get(itemId);
 
-        if (item != null && item.getOwnerId() == userId) {
-            items.remove(itemId);
-            log.info("пользователь с id={} удалил ссылку с id={}", userId, itemId);
-        }
     }
 }

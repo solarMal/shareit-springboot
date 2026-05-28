@@ -4,46 +4,36 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/users")
 public class UserController {
     private final UserService userService;
-    private final UserMapper userMapper;
-    List<User> users;
-
 
     @Autowired
-    public UserController(UserService userService, UserMapper userMapper) {
+    public UserController(UserService userService) {
         this.userService = userService;
-        this.userMapper = userMapper;
     }
 
     @PostMapping
     public UserDto createUser(@RequestBody UserDto userDto) {
-        User user = userMapper.toUser(userDto);
-        User created = userService.createUser(user);
-        return userMapper.toUserDto(created);
+        return userService.createUser(userDto);
     }
 
     @GetMapping({"/{id}"})
     public UserDto getUserById(@PathVariable Long id) {
-        User user = userService.getUserById(id);
-        return userMapper.toUserDto(user);
+        return userService.getUserById(id);
     }
 
     @GetMapping
     public List<UserDto> getAllUsers() {
-        return userService.getAllUsers().stream().map(userMapper::toUserDto)
-                .collect(Collectors.toList());
+        return userService.getAllUsers();
     }
 
     @PatchMapping("/{id}")
-    public UserDto updateUser(@PathVariable Long id, @RequestBody UserDto userDto) {
-        User user = userMapper.toUser(userDto);
-        User updateUser = userService.updateUser(id, user);
-        return userMapper.toUserDto(updateUser);
+    public UserDto updateUser(@PathVariable Long id,
+                              @RequestBody UserDto userDto) {
+        return userService.updateUser(id, userDto);
     }
 
     @DeleteMapping("/{id}")
