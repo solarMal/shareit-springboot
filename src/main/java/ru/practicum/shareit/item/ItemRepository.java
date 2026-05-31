@@ -1,18 +1,30 @@
 package ru.practicum.shareit.item;
 
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.querydsl.QuerydslPredicateExecutor;
+import org.springframework.data.repository.query.Param;
+
 import java.util.List;
 import java.util.Optional;
 
-public interface ItemRepository {
-    Item createItem(Item item);
+public interface ItemRepository extends JpaRepository<Item, Long>, QuerydslPredicateExecutor<Item> {
 
-    Item updateItem(Long itemId, Item item);
+    @Query("""
+        select i
+        from Item i
+        where i.user.id = :userId
+    """)
+    List<Item> findAllByUserId(@Param("userId") Long userId);
 
-    List<Item> getAllItemsByUserId(long userId);
 
-    Optional<Item> getItemById(Long itemId);
-
-    List<Item> searchItemByText(String text);
-
-    void deleteByUserIdAndItemId(long userId, long itemId);
+    @Query("""
+        select i
+        from Item i
+        where i.available = true
+            and(
+                lower(i.name) like lower(concat('%', :text, '%'))
+            or lower(i.description) like lower(concat('%', :text, '%')))
+        """)
+    List<Item> searchByText(@Param("text") String text);
 }

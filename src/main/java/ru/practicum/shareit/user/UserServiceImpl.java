@@ -4,7 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.errorhandler.exception.EmailAlreadyExist;
+import ru.practicum.shareit.errorhandler.exception.EmailNotExists;
 import ru.practicum.shareit.errorhandler.exception.UserNotFoundException;
+import ru.practicum.shareit.errorhandler.exception.ValidateException;
 
 import java.util.List;
 
@@ -21,8 +24,16 @@ public class UserServiceImpl implements UserService {
     @Transactional
     @Override
     public UserDto createUser(UserDto userDto) {
+        if (userDto.getEmail() == null) {
+            throw new EmailNotExists("email not exists");
+        }
+
+        if (!userDto.getEmail().contains("@")) {
+            throw new ValidateException("Invalid Email");
+        }
+
         if (repository.existsByEmail(userDto.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new EmailAlreadyExist("Email already exists");
         }
 
         return UserMapper.toUserDto(
@@ -53,8 +64,8 @@ public class UserServiceImpl implements UserService {
             current.setName(userDto.getName());
         }
 
-        if (current.getEmail() != null) {
-            current.setName(userDto.getEmail());
+        if (userDto.getEmail() != null) {
+            current.setEmail(userDto.getEmail());
         }
 
         User savedUser = repository.save(current);

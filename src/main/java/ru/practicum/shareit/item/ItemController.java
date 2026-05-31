@@ -16,41 +16,29 @@ public class ItemController {
     @PostMapping
     public ItemDto add(@RequestHeader("X-Sharer-User-Id") Long userId,
                        @RequestBody ItemDto itemDto) {
-        Item item = itemMapper.toItem(itemDto);
-        Item created = itemService.createItem(userId, item);
-        return itemMapper.toItemDto(created);
+        return itemService.createItem(userId, itemDto);
     }
 
     @PatchMapping("/{itemId}")
     public ItemDto updateItem(@PathVariable Long itemId,
                               @RequestHeader("X-Sharer-User-Id") Long userId,
                               @RequestBody ItemDto itemDto) {
-        Item item = itemMapper.toItem(itemDto);
-        Item updated = itemService.updateItem(itemId, userId, item);
-        return itemMapper.toItemDto(updated);
+        return itemService.updateItem(itemId, userId, itemDto);
     }
 
     @GetMapping
-    public List<Item> get(@RequestHeader("X-Sharer-User-Id") long userId) {
+    public List<ItemDto> get(@RequestHeader("X-Sharer-User-Id") long userId) {
         return itemService.getAllItemsByUserId(userId);
     }
 
     @GetMapping("/{itemId}")
     public ItemDto getItemById(@PathVariable Long itemId) {
-        Item item = itemService.getItemById(itemId);
-        return itemMapper.toItemDto(item);
+        return itemService.getItemById(itemId);
     }
 
     @GetMapping("/search")
     public List<ItemDto> searchItemByText(@RequestParam String text) {
-        return itemService.searchItemByText(text).stream()
-                .map(itemMapper::toItemDto)
-                .collect(Collectors.toList());
+        return itemService.searchItemByText(text);
     }
 
-    @DeleteMapping("/{itemId}")
-    public void deleteItem(@RequestHeader("X-Later-User-Id") long userId,
-                           @PathVariable long itemId) {
-        itemService.deleteItem(userId, itemId);
-    }
 }

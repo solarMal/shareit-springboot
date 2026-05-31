@@ -21,14 +21,14 @@ public class Item {
     @Column(name = "available", nullable = false)
     private Boolean available;
 
-    @Column(name = "description")
+    @Column(name = "description", nullable = false)
     private String description;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "url", nullable = false)
+    @Column(name = "url")
     private String url;
 
 }
