@@ -1,8 +1,8 @@
 package ru.practicum.shareit.item;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.booking.*;
 import ru.practicum.shareit.errorhandler.exception.ItemNotFoundException;
 import ru.practicum.shareit.errorhandler.exception.ItemOwnerException;
 import ru.practicum.shareit.errorhandler.exception.UserNotFoundException;
@@ -10,20 +10,16 @@ import ru.practicum.shareit.errorhandler.exception.ValidateException;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
 
-
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class ItemServiceImpl implements ItemService {
-    ItemRepository itemRepository;
-    UserRepository userRepository;
-
-    @Autowired
-    public ItemServiceImpl(ItemRepository itemRepository,
-                           UserRepository userRepository) {
-        this.itemRepository = itemRepository;
-        this.userRepository = userRepository;
-    }
+    private final ItemRepository itemRepository;
+    private final UserRepository userRepository;
+    private final CommentRepository commentRepository;
+    private final BookingRepository bookingRepository;
 
     @Override
     public ItemDto createItem(Long userId, ItemDto itemDto) {
@@ -107,6 +103,98 @@ public class ItemServiceImpl implements ItemService {
         return items.stream()
                 .map(ItemMapper::toItemDto)
                 .toList();
+    }
+
+    @Override
+    public CommentResponseDto createComment(CommentRequestDto requestDto,
+                                            Long itemId,
+                                            Long userId) {
+
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() ->
+                        new ItemNotFoundException("Item with id " + itemId + " not found"));
+
+        User author = userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new UserNotFoundException("User with id " + userId + " not found"));
+
+        List<Booking> bookings = bookingRepository.findAllByBookerId(userId);
+
+        Booking bookingForItem = null;
+
+        for (Booking booking : bookings) {
+            if (booking.getItem().getId().equals(itemId)
+                    && booking.getEnd().isBefore(LocalDateTime.now())
+                    && booking.getStatus() == BookingStatus.APPROVED) {
+
+                bookingForItem = booking;
+                break;
+            }
+        }
+
+        if (bookingForItem == null) {
+            throw new ValidateException(
+                    "Only a user who has rented this item can leave a comment");
+        }
+
+        Comment comment = new Comment();
+        comment.setItem(item);
+        comment.setAuthor(author);
+        comment.setText(requestDto.getText());
+        comment.setCreated(LocalDateTime.now());
+
+        Comment savedComment = commentRepository.save(comment);
+
+        return CommentMapper.toCommentResponseDto(savedComment);
+    }
+
+    @Override
+    public ItemWithCommentsDto getItemById(Long itemId, Long userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new UserNotFoundException("User with id " + userId + " not found"));
+
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() ->
+                        new ItemNotFoundException("Item with id " + itemId + " not found"));
+
+        List<CommentResponseDto> comments = commentRepository
+                .findAllCommentsByItemId(itemId)
+                .stream()
+                .map(CommentMapper::toCommentResponseDto)
+                .toList();
+
+        BookingShortDto lastBookingDto = null;
+        BookingShortDto nextBookingDto = null;
+
+        if (item.getUser().getId().equals(user.getId())) {
+
+            Booking lastBooking = bookingRepository
+                    .findFirstByItemIdAndStartBeforeOrderByStartDesc(
+                            itemId,
+                            LocalDateTime.now());
+
+            Booking nextBooking = bookingRepository
+                    .findFirstByItemIdAndStartAfterOrderByStartAsc(
+                            itemId,
+                            LocalDateTime.now());
+
+            lastBookingDto = lastBooking == null
+                    ? null
+                    : BookingMapper.toBookingShortDto(lastBooking);
+
+            nextBookingDto = nextBooking == null
+                    ? null
+                    : BookingMapper.toBookingShortDto(nextBooking);
+        }
+
+        return ItemMapper.toItemWithCommentsDto(
+                item,
+                comments,
+                lastBookingDto,
+                nextBookingDto
+        );
     }
 
 }

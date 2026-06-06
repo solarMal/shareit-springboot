@@ -51,4 +51,22 @@ public class ErrorHandler {
     public ErrorResponse itemOwnerException(ItemOwnerException e) {
         return new ErrorResponse(e.getMessage());
     }
+
+    @ExceptionHandler(ItemNotAvailableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse falseAvailable(ItemNotAvailableException e) {
+        return new ErrorResponse(e.getMessage());
+    }
+
+    @ExceptionHandler(BookingDateValidationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse bookingDateException(BookingDateValidationException e) {
+        return new ErrorResponse(e.getMessage());
+    }
+
+    @ExceptionHandler(BookingNotFound.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse bookingBotFound(BookingNotFound e) {
+        return new ErrorResponse(e.getMessage());
+    }
 }

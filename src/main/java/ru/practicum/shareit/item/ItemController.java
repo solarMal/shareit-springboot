@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ItemController {
     private final ItemService itemService;
-    private final ItemMapper itemMapper;
 
     @PostMapping
     public ItemDto add(@RequestHeader("X-Sharer-User-Id") Long userId,
@@ -32,13 +31,21 @@ public class ItemController {
     }
 
     @GetMapping("/{itemId}")
-    public ItemDto getItemById(@PathVariable Long itemId) {
-        return itemService.getItemById(itemId);
+    public ItemWithCommentsDto getAllCommentsBiItemId(@PathVariable Long itemId,
+                                                           @RequestHeader("X-Sharer-User-Id") Long userId) {
+        return itemService.getItemById(itemId, userId);
     }
 
     @GetMapping("/search")
     public List<ItemDto> searchItemByText(@RequestParam String text) {
         return itemService.searchItemByText(text);
+    }
+
+    @PostMapping("/{itemId}/comment")
+    public CommentResponseDto createComment(@RequestBody CommentRequestDto requestDto,
+                                            @PathVariable Long itemId,
+                                            @RequestHeader("X-Sharer-User-Id") Long userId) {
+        return itemService.createComment(requestDto, itemId, userId);
     }
 
 }

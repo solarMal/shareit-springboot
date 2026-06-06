@@ -13,4 +13,8 @@ public interface ItemService {
 
     List<ItemDto> searchItemByText(String text);
 
+    CommentResponseDto createComment(CommentRequestDto requestDto, Long itemId, Long userId);
+
+    ItemWithCommentsDto getItemById(Long itemId, Long userId);
+
 }
